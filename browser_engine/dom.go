@@ -1,33 +1,56 @@
 package dom
 
-// Node - Node interface
-type Node interface{}
+// ElementNodeType - constant for element node
+const ElementNodeType = "DOM/ELEMENT_NODE"
 
-// TextNode - a basic dom node
+// TextNodeType - constant for element node
+const TextNodeType = "DOM/TEXT_NODE"
+
+// Node - Node interface
+type Node interface {
+	getChildren() []*Node
+	getNodeType() string
+}
+
+// TextNode - a dom text node
 type TextNode struct {
-	children string
+	text string
+}
+
+func (t *TextNode) getChildren() []*Node {
+	return []*Node{}
+}
+func (t *TextNode) getNodeType() string {
+	return TextNodeType
 }
 
 // ElementNode - an html element consists of tagName and attributes
 type ElementNode struct {
-	children   []Node
+	children   []*Node
 	tagName    string
 	attributes AttrMap
+}
+
+func (e *ElementNode) getChildren() []*Node {
+	return e.children
+}
+func (e *ElementNode) getNodeType() string {
+	return ElementNodeType
 }
 
 // AttrMap - an attribute map
 type AttrMap map[string]string
 
-// Text - Create a text dom node
-func Text(data string) Node {
-	return TextNode{
-		children: data,
+// CreateTextNode - Create a text dom node
+func CreateTextNode(data string) Node {
+	return &TextNode{
+		text: data,
 	}
 }
 
-// Elem - Create an Element dom node
-func Elem(tagName string, attr AttrMap, children []Node) ElementNode {
-	return ElementNode{
+// CreateElementNode - Create an Element dom node
+func CreateElementNode(tagName string, attr AttrMap, children []*Node) Node {
+	return &ElementNode{
 		children:   children,
 		tagName:    tagName,
 		attributes: attr,
