@@ -8,7 +8,7 @@ const TextNodeType = "DOM/TEXT_NODE"
 
 // Node - Node interface
 type Node interface {
-	getChildren() []*Node
+	getChildren() []Node
 	getNodeType() string
 }
 
@@ -17,24 +17,24 @@ type TextNode struct {
 	text string
 }
 
-func (t *TextNode) getChildren() []*Node {
-	return []*Node{}
+func (t TextNode) getChildren() []Node {
+	return []Node{}
 }
-func (t *TextNode) getNodeType() string {
+func (t TextNode) getNodeType() string {
 	return TextNodeType
 }
 
 // ElementNode - an html element consists of tagName and attributes
 type ElementNode struct {
-	children   []*Node
 	tagName    string
 	attributes AttrMap
+	children   []Node
 }
 
-func (e *ElementNode) getChildren() []*Node {
+func (e ElementNode) getChildren() []Node {
 	return e.children
 }
-func (e *ElementNode) getNodeType() string {
+func (e ElementNode) getNodeType() string {
 	return ElementNodeType
 }
 
@@ -43,16 +43,16 @@ type AttrMap map[string]string
 
 // CreateTextNode - Create a text dom node
 func CreateTextNode(data string) Node {
-	return &TextNode{
+	return TextNode{
 		text: data,
 	}
 }
 
 // CreateElementNode - Create an Element dom node
-func CreateElementNode(tagName string, attr AttrMap, children []*Node) Node {
-	return &ElementNode{
+func CreateElementNode(tagName string, attrs AttrMap, children []Node) Node {
+	return ElementNode{
 		children:   children,
 		tagName:    tagName,
-		attributes: attr,
+		attributes: attrs,
 	}
 }
