@@ -1,4 +1,4 @@
-package dom
+package css
 
 // StyleSheet - A stylesheet
 type StyleSheet struct {
