@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -48,7 +47,7 @@ func (h *HTMLParser) consumeWhile(test func(string) bool) string {
 // Consume and discard zero or more whitespace characters.
 func (h *HTMLParser) consumeWhitespace() {
 	h.consumeWhile(func(c string) bool {
-		return c == " "
+		return c == " " || c == "\n" || c == "\t"
 	})
 }
 
@@ -139,7 +138,6 @@ func (h *HTMLParser) parseAttr() (string, string) {
 // Parse a quoted value
 func (h *HTMLParser) parseAttrValue() string {
 	openQuote := h.consumeChar()
-	fmt.Println(openQuote)
 	if openQuote != "\"" && openQuote != "'" {
 		panic("Parse attribute error: no quote sign")
 	}

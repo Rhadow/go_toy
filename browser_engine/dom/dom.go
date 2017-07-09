@@ -1,5 +1,7 @@
 package dom
 
+import "fmt"
+
 // ElementNodeType - constant for element node
 const ElementNodeType = "DOM/ELEMENT_NODE"
 
@@ -22,6 +24,9 @@ func (t TextNode) getChildren() []Node {
 }
 func (t TextNode) getNodeType() string {
 	return TextNodeType
+}
+func (t TextNode) String() string {
+	return fmt.Sprintf("Text Node: %s", t.text)
 }
 
 // ElementNode - an html element consists of tagName and attributes
