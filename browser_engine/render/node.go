@@ -6,7 +6,16 @@ import (
 
 	"github.com/rhadow/go_toy/browser_engine/css"
 	"github.com/rhadow/go_toy/browser_engine/dom"
-	"github.com/rhadow/go_toy/browser_engine/layout"
+)
+
+// Display - Display Type
+type Display uint8
+
+// BLOCK - Block for display
+const (
+	BLOCK Display = iota + 1
+	INLINE
+	NONE
 )
 
 // MatchedRule - A map with specificity and rule
@@ -42,26 +51,27 @@ type RenderedNode struct {
 
 func (r RenderedNode) getPropertyValueByName(name string) (css.StyleDeclarationValue, error) {
 	var result css.StyleDeclarationValue
-	value, ok := r.Properties["name"]
+	value, ok := r.Properties[name]
 	if !ok {
 		return result, errors.New("No name field in given rendered node")
 	}
 	return value, nil
 }
 
-func (r RenderedNode) getDisplay() layout.Display {
+// GetDisplay - get display of render node
+func (r RenderedNode) GetDisplay() Display {
 	styleDeclaration, err := r.getPropertyValueByName("display")
 	if err != nil {
-		return layout.INLINE
+		return INLINE
 	}
 	value := styleDeclaration.GetStyleDeclarationValue()
 	switch value {
 	case "block":
-		return layout.BLOCK
+		return BLOCK
 	case "none":
-		return layout.NONE
+		return NONE
 	default:
-		return layout.INLINE
+		return INLINE
 	}
 }
 
