@@ -49,7 +49,7 @@ func (r RenderedNode) getPropertyValueByName(name string) (css.StyleDeclarationV
 	return value, nil
 }
 
-func (r RenderedNode) getDisplay() string {
+func (r RenderedNode) getDisplay() layout.Display {
 	styleDeclaration, err := r.getPropertyValueByName("display")
 	if err != nil {
 		return layout.INLINE

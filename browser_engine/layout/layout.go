@@ -1,22 +1,24 @@
 package layout
 
+// BoxType - Node Type
+type BoxType uint8
+
 // BlockNode - A block node constant
-const BlockNode = "BLOCK_NODE"
+const (
+	BlockNode BoxType = iota + 1
+	InlineNode
+	AnonymousBlockMode
+)
 
-// InlineNode - A inline node constant
-const InlineNode = "INLINE_NODE"
-
-// AnonymousBlockNode - An anonymoous node constant
-const AnonymousBlockNode = "ANONYMOUS_BLOCK_NODE"
+// Display - Display Type
+type Display uint8
 
 // BLOCK - Block for display
-const BLOCK = "DISPLAY_BLOCK"
-
-// INLINE - Inline for display
-const INLINE = "DISPLAY_INLINE"
-
-// NONE - None for display
-const NONE = "DISPLAY_NONE"
+const (
+	BLOCK Display = iota + 1
+	INLINE
+	NONE
+)
 
 // Dimensions - A dimension
 type Dimensions struct {
@@ -45,6 +47,6 @@ type EdgeSizes struct {
 // Box - A layout box
 type Box struct {
 	Dimensions Dimensions
-	BoxType    string
+	BoxType    BoxType
 	Children   []Box
 }
