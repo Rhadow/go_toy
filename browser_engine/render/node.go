@@ -6,6 +6,7 @@ import (
 
 	"github.com/rhadow/go_toy/browser_engine/css"
 	"github.com/rhadow/go_toy/browser_engine/dom"
+	"github.com/rhadow/go_toy/browser_engine/layout"
 )
 
 // MatchedRule - A map with specificity and rule
@@ -37,6 +38,31 @@ type RenderedNode struct {
 	Node       dom.Node
 	Properties PropertyMap
 	Children   []RenderedNode
+}
+
+func (r RenderedNode) getPropertyValueByName(name string) (css.StyleDeclarationValue, error) {
+	var result css.StyleDeclarationValue
+	value, ok := r.Properties["name"]
+	if !ok {
+		return result, errors.New("No name field in given rendered node")
+	}
+	return value, nil
+}
+
+func (r RenderedNode) getDisplay() string {
+	styleDeclaration, err := r.getPropertyValueByName("display")
+	if err != nil {
+		return layout.INLINE
+	}
+	value := styleDeclaration.GetStyleDeclarationValue()
+	switch value {
+	case "block":
+		return layout.BLOCK
+	case "none":
+		return layout.NONE
+	default:
+		return layout.INLINE
+	}
 }
 
 // MatchSelector - Check selector matches selected element

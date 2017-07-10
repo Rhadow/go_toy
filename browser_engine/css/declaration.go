@@ -10,7 +10,7 @@ type StyleDeclaration struct {
 
 // StyleDeclarationValue - A style declaration value
 type StyleDeclarationValue interface {
-	getStyleDeclarationValue() string
+	GetStyleDeclarationValue() string
 }
 
 // Length - A length value. e.g: 50px
@@ -19,14 +19,16 @@ type Length struct {
 	Unit  string
 }
 
-func (l Length) getStyleDeclarationValue() string {
+// GetStyleDeclarationValue - Get style declaration value for Length
+func (l Length) GetStyleDeclarationValue() string {
 	return fmt.Sprintf("%f %s", l.Value, l.Unit)
 }
 
 // Keyword - A keyword value. e.g: inline-block
 type Keyword string
 
-func (k Keyword) getStyleDeclarationValue() string {
+// GetStyleDeclarationValue - Get style declaration value for Keyword
+func (k Keyword) GetStyleDeclarationValue() string {
 	return string(k)
 }
 
@@ -38,6 +40,7 @@ type ColorValue struct {
 	A uint8
 }
 
-func (k ColorValue) getStyleDeclarationValue() string {
+// GetStyleDeclarationValue - Get style declaration value for ColorValue
+func (k ColorValue) GetStyleDeclarationValue() string {
 	return fmt.Sprintf("r:%d, g:%d, b:%d, a:%d", k.R, k.G, k.B, k.A)
 }
