@@ -14,6 +14,8 @@ func main() {
 		<div id="test2">Hi2</div>
 		<div class="test3">Hi3</div>
 		<div class="test4">Hi4</div>
+		<div class="test3">Hi5</div>
+		<div class="test3">Hi6</div>
 	</div>`
 	htmlParser := parser.HTMLParser{
 		Input:    sourceHTML,

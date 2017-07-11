@@ -73,6 +73,10 @@ func BuildLayoutTree(renderedNode render.RenderedNode) Box {
 			lastType = render.INLINE
 		}
 	}
+	if anonymousLayoutBox != nil {
+		root.Children = append(root.Children, *anonymousLayoutBox)
+		anonymousLayoutBox = nil
+	}
 	return root
 }
 
