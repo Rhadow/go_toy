@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ahmdrz/goinsta"
 	"github.com/howeyc/gopass"
 )
 
@@ -37,6 +38,14 @@ func promptUserCredentials() (string, string) {
 	return username, password
 }
 
+func loginInstagram(username, password string) *goinsta.Instagram {
+	insta := goinsta.New(username, password)
+	if err := insta.Login(); err != nil {
+		panic(err)
+	}
+	return insta
+}
+
 func matchQuitCommand(command string) bool {
 	trimmedCommand := strings.Trim(command, " ")
 	switch trimmedCommand {
@@ -47,7 +56,7 @@ func matchQuitCommand(command string) bool {
 	}
 }
 
-func startTerminalInteraction() {
+func startTerminalInteraction(insta *goinsta.Instagram) {
 	const prompt = "ig_fetcher> "
 	fmt.Print(prompt)
 	scanner := bufio.NewScanner(os.Stdin)
@@ -74,7 +83,10 @@ func main() {
 	flag.Parse()
 
 	username, password := promptUserCredentials()
-	startTerminalInteraction()
+	insta := loginInstagram(username, password)
+	defer insta.Logout()
+
+	startTerminalInteraction(insta)
 	fmt.Printf("Number of workers: %d\n", *numberOfWorkers)
 	fmt.Printf("Username: %s\n", username)
 	fmt.Printf("Password: %s\n", password)
