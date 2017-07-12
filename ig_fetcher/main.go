@@ -34,7 +34,7 @@ func promptUserCredentials() (string, string) {
 		password = string(temp)
 	}
 
-	return username, string(password)
+	return username, password
 }
 
 func matchQuitCommand(command string) bool {
