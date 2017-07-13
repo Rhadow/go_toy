@@ -5,11 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/ahmdrz/goinsta"
 	"github.com/howeyc/gopass"
 )
+
+const loadingText string = "Loading..."
 
 func promptUserCredentials() (string, string) {
 	var (
@@ -40,6 +43,7 @@ func promptUserCredentials() (string, string) {
 
 func loginInstagram(username, password string) *goinsta.Instagram {
 	insta := goinsta.New(username, password)
+	fmt.Println(loadingText)
 	if err := insta.Login(); err != nil {
 		panic(err)
 	}
@@ -56,8 +60,29 @@ func matchQuitCommand(command string) bool {
 	}
 }
 
+func matchSearchCommand(command string) bool {
+	trimmedCommand := strings.Trim(command, " ")
+	matched, err := regexp.MatchString("^(s|search) .+", trimmedCommand)
+	if err != nil {
+		panic(err)
+	}
+	return matched
+}
+
+func searchUserHandler(command string) {
+	trimmedCommand := strings.Trim(command, " ")
+	commandAndArgs := strings.Split(trimmedCommand, " ")
+	targetUser := strings.Join(commandAndArgs[1:], " ")
+	fmt.Println(targetUser)
+}
+
 func startTerminalInteraction(insta *goinsta.Instagram) {
 	const prompt = "ig_fetcher> "
+	res, err := insta.GetProfileData()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Hello! %s\n", res.User.FullName)
 	fmt.Print(prompt)
 	scanner := bufio.NewScanner(os.Stdin)
 	quit := false
@@ -66,6 +91,8 @@ func startTerminalInteraction(insta *goinsta.Instagram) {
 		switch {
 		case matchQuitCommand(command):
 			quit = true
+		case matchSearchCommand(command):
+			searchUserHandler(command)
 		default:
 			if command != "" {
 				fmt.Printf("Unknown command: %s\n", command)
@@ -78,6 +105,10 @@ func startTerminalInteraction(insta *goinsta.Instagram) {
 	}
 }
 
+func quittingPrompt(insta *goinsta.Instagram) {
+	fmt.Println("Good bye!")
+}
+
 func main() {
 	numberOfWorkers := flag.Int("w", 2, "Number of workers")
 	flag.Parse()
@@ -87,7 +118,6 @@ func main() {
 	defer insta.Logout()
 
 	startTerminalInteraction(insta)
+	quittingPrompt(insta)
 	fmt.Printf("Number of workers: %d\n", *numberOfWorkers)
-	fmt.Printf("Username: %s\n", username)
-	fmt.Printf("Password: %s\n", password)
 }
