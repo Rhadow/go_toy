@@ -42,7 +42,7 @@ func promptUserCredentials() (string, string) {
 	return username, password
 }
 
-func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount) {
+func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount, numberOfWorkers int) {
 	const prompt = "ig_fetcher> "
 	res, err := insta.GetProfileData()
 	if err != nil {
@@ -69,7 +69,7 @@ func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcher
 			if atoiErr != nil {
 				panic(atoiErr)
 			}
-			instaHandlers.DownloadPictureHandler(targetIndex, insta, simplifiedUsers)
+			instaHandlers.DownloadPictureHandler(targetIndex, insta, simplifiedUsers, numberOfWorkers)
 		default:
 			if command != "" {
 				fmt.Printf("Unknown command: %s\n", command)
@@ -90,14 +90,13 @@ func main() {
 	var simplifiedUsers fetcherResponse.ByFollowersCount
 	const loadingText string = "Loading..."
 
-	numberOfWorkers := flag.Int("w", 2, "Number of workers")
+	numberOfWorkers := flag.Int("w", 4, "Number of workers")
 	flag.Parse()
 
 	username, password := promptUserCredentials()
 	insta := instaHandlers.LoginInstagram(username, password, loadingText)
 	defer insta.Logout()
 
-	startTerminalInteraction(insta, &simplifiedUsers)
+	startTerminalInteraction(insta, &simplifiedUsers, *numberOfWorkers)
 	quittingPrompt()
-	fmt.Printf("Number of workers: %d\n", *numberOfWorkers)
 }
