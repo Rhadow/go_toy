@@ -5,36 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ahmdrz/goinsta"
 	"github.com/howeyc/gopass"
+	"github.com/rhadow/go_toy/ig_fetcher/commandMatchers"
+	"github.com/rhadow/go_toy/ig_fetcher/fetcherResponse"
+	"github.com/rhadow/go_toy/ig_fetcher/instaHandlers"
 )
-
-// SimplifiedUser - Simplified twitter user data structure
-type SimplifiedUser struct {
-	ID        int64
-	Name      string
-	Username  string
-	Followers int
-}
-type byFollowersCount []SimplifiedUser
-
-func (s byFollowersCount) Len() int {
-	return len(s)
-}
-func (s byFollowersCount) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s byFollowersCount) Less(i, j int) bool {
-	return s[i].Followers > s[j].Followers
-}
-
-var simplifiedUsers byFollowersCount
-
-const loadingText string = "Loading..."
 
 func promptUserCredentials() (string, string) {
 	var (
@@ -63,75 +42,7 @@ func promptUserCredentials() (string, string) {
 	return username, password
 }
 
-func loginInstagram(username, password string) *goinsta.Instagram {
-	insta := goinsta.New(username, password)
-	fmt.Printf(loadingText)
-	if err := insta.Login(); err != nil {
-		panic(err)
-	}
-	return insta
-}
-
-func matchQuitCommand(command string) bool {
-	trimmedCommand := strings.Trim(command, " ")
-	switch trimmedCommand {
-	case "q", "quit", ":q":
-		return true
-	default:
-		return false
-	}
-}
-
-func matchSearchCommand(command string) bool {
-	trimmedCommand := strings.Trim(command, " ")
-	matched, err := regexp.MatchString("^(s|search) .+", trimmedCommand)
-	if err != nil {
-		panic(err)
-	}
-	return matched
-}
-
-func matchDownloadCommand(command string) bool {
-	trimmedCommand := strings.Trim(command, " ")
-	matched, err := regexp.MatchString("^d [0-9]+", trimmedCommand)
-	if err != nil {
-		panic(err)
-	}
-	return matched
-}
-
-func searchUserHandler(query string, insta *goinsta.Instagram) {
-	users, searchErr := insta.SearchUsername(query)
-	if searchErr != nil {
-		panic(searchErr)
-	}
-	simplifiedUsers = byFollowersCount{}
-	for _, user := range users.Users {
-		simplifiedUsers = append(simplifiedUsers, SimplifiedUser{
-			Name:      user.FullName,
-			Username:  user.Username,
-			Followers: user.FollowerCount,
-			ID:        user.Pk,
-		})
-	}
-	for i, user := range simplifiedUsers {
-		fmt.Printf("[%d] %s - %s - %d followers\n", i+1, user.Username, user.Name, user.Followers)
-	}
-}
-
-func downloadPictureHandler(targetIndex int, insta *goinsta.Instagram) {
-	realIndex := targetIndex - 1
-	if len(simplifiedUsers) <= realIndex || realIndex < 0 {
-		fmt.Printf("%d out of range\n", targetIndex)
-		return
-	}
-	targetUser := simplifiedUsers[realIndex]
-	feeds, _ := insta.UserFeed(targetUser.ID, "", "")
-	// feeds.Items[0].ImageVersions2.Candidates[0].URL
-	fmt.Print(feeds)
-}
-
-func startTerminalInteraction(insta *goinsta.Instagram) {
+func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount) {
 	const prompt = "ig_fetcher> "
 	res, err := insta.GetProfileData()
 	if err != nil {
@@ -144,21 +55,21 @@ func startTerminalInteraction(insta *goinsta.Instagram) {
 	for scanner.Scan() {
 		command := scanner.Text()
 		switch {
-		case matchQuitCommand(command):
+		case commandMatchers.MatchQuitCommand(command):
 			quit = true
-		case matchSearchCommand(command):
+		case commandMatchers.MatchSearchCommand(command):
 			trimmedCommand := strings.Trim(command, " ")
 			commandAndArgs := strings.Split(trimmedCommand, " ")
 			query := strings.Join(commandAndArgs[1:], " ")
-			searchUserHandler(query, insta)
-		case matchDownloadCommand(command):
+			instaHandlers.SearchUserHandler(query, insta, simplifiedUsers)
+		case commandMatchers.MatchDownloadCommand(command):
 			trimmedCommand := strings.Trim(command, " ")
 			commandAndArgs := strings.Split(trimmedCommand, " ")
 			targetIndex, atoiErr := strconv.Atoi(commandAndArgs[1])
 			if atoiErr != nil {
 				panic(atoiErr)
 			}
-			downloadPictureHandler(targetIndex, insta)
+			instaHandlers.DownloadPictureHandler(targetIndex, insta, simplifiedUsers)
 		default:
 			if command != "" {
 				fmt.Printf("Unknown command: %s\n", command)
@@ -176,14 +87,17 @@ func quittingPrompt() {
 }
 
 func main() {
+	var simplifiedUsers fetcherResponse.ByFollowersCount
+	const loadingText string = "Loading..."
+
 	numberOfWorkers := flag.Int("w", 2, "Number of workers")
 	flag.Parse()
 
 	username, password := promptUserCredentials()
-	insta := loginInstagram(username, password)
+	insta := instaHandlers.LoginInstagram(username, password, loadingText)
 	defer insta.Logout()
 
-	startTerminalInteraction(insta)
+	startTerminalInteraction(insta, &simplifiedUsers)
 	quittingPrompt()
 	fmt.Printf("Number of workers: %d\n", *numberOfWorkers)
 }
