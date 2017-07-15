@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/user"
 	"strconv"
 	"strings"
 
@@ -42,7 +43,7 @@ func promptUserCredentials() (string, string) {
 	return username, password
 }
 
-func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount, numberOfWorkers int) {
+func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount, numberOfWorkers int, baseDir string) {
 	const prompt = "ig_fetcher> "
 	res, err := insta.GetProfileData()
 	if err != nil {
@@ -69,7 +70,13 @@ func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcher
 			if atoiErr != nil {
 				panic(atoiErr)
 			}
-			instaHandlers.DownloadPictureHandler(targetIndex, insta, simplifiedUsers, numberOfWorkers)
+			realIndex := targetIndex - 1
+			if len(*simplifiedUsers) <= realIndex || realIndex < 0 {
+				fmt.Printf("%d out of range\n", targetIndex)
+				return
+			}
+			targetUser := (*simplifiedUsers)[realIndex]
+			instaHandlers.DownloadPictureHandler(insta, targetUser, numberOfWorkers, baseDir)
 		default:
 			if command != "" {
 				fmt.Printf("Unknown command: %s\n", command)
@@ -88,15 +95,17 @@ func quittingPrompt() {
 
 func main() {
 	var simplifiedUsers fetcherResponse.ByFollowersCount
-	const loadingText string = "Loading..."
+	//Get system user folder
+	usr, _ := user.Current()
+	baseDir := fmt.Sprintf("%v/Pictures/goInstagram", usr.HomeDir)
 
 	numberOfWorkers := flag.Int("w", 4, "Number of workers")
 	flag.Parse()
 
 	username, password := promptUserCredentials()
-	insta := instaHandlers.LoginInstagram(username, password, loadingText)
+	insta := instaHandlers.LoginInstagram(username, password)
 	defer insta.Logout()
 
-	startTerminalInteraction(insta, &simplifiedUsers, *numberOfWorkers)
+	startTerminalInteraction(insta, &simplifiedUsers, *numberOfWorkers, baseDir)
 	quittingPrompt()
 }

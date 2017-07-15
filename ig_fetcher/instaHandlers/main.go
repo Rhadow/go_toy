@@ -8,9 +8,9 @@ import (
 )
 
 // LoginInstagram - Log in instagram
-func LoginInstagram(username, password, loadingText string) *goinsta.Instagram {
+func LoginInstagram(username, password string) *goinsta.Instagram {
 	insta := goinsta.New(username, password)
-	fmt.Printf(loadingText)
+	fmt.Printf("Loading...")
 	if err := insta.Login(); err != nil {
 		panic(err)
 	}
@@ -37,17 +37,12 @@ func SearchUserHandler(query string, insta *goinsta.Instagram, simplifiedUsers *
 	}
 }
 
-func collectPhotoURL(targetIndex int, insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount) []string {
+func collectPhotoURL(insta *goinsta.Instagram, targetUser fetcherResponse.SimplifiedUser) []string {
 	const limit float64 = 300
 	photoURLs := []string{}
-	realIndex := targetIndex - 1
-	if len(*simplifiedUsers) <= realIndex || realIndex < 0 {
-		fmt.Printf("%d out of range\n", targetIndex)
-		return []string{}
-	}
-	targetUser := (*simplifiedUsers)[realIndex]
+
 	feeds, feedErr := insta.UserFeed(targetUser.ID, "", "")
-	for feeds.MoreAvailable && len(photoURLs) <= int(limit) {
+	for len(photoURLs) <= int(limit) {
 		fmt.Printf("Collecting...%.1f%%\n", (float64(len(photoURLs))/limit)*100)
 		if feedErr != nil {
 			panic(feedErr)
@@ -57,45 +52,41 @@ func collectPhotoURL(targetIndex int, insta *goinsta.Instagram, simplifiedUsers 
 				photoURLs = append(photoURLs, item.ImageVersions2.Candidates[0].URL)
 			}
 		}
+		if !feeds.MoreAvailable {
+			break
+		}
 		feeds, _ = insta.UserFeed(targetUser.ID, feeds.NextMaxID, "")
 	}
 	return photoURLs
 }
 
-func downloadPictures(photoUrls []string, numberOfWorkers int) {
+func downloadPictures(photoUrls []string, numberOfWorkers int, baseDir string) {
 	fmt.Printf("100%% collected! Starting to download!\n")
-	completeChannel := make(chan int)
-	completeCount := 0
-	partitionLength := len(photoUrls) / numberOfWorkers
+	queue := make(chan string, len(photoUrls))
+	resultQueue := make(chan int, len(photoUrls))
 	for i := 0; i < numberOfWorkers; i++ {
-		start := i * partitionLength
-		end := start + partitionLength
-		if i < numberOfWorkers-1 {
-			go startDownloadWorkers(photoUrls[start:end], completeChannel)
-		} else {
-			go startDownloadWorkers(photoUrls[start:], completeChannel)
-		}
+		go startDownloadWorkers(baseDir, queue, resultQueue)
 	}
-	for range completeChannel {
-		completeCount++
-		fmt.Println(completeCount)
-		if completeCount == numberOfWorkers {
-			close(completeChannel)
-		}
+	for _, url := range photoUrls {
+		queue <- url
 	}
+	close(queue)
+	for i := 0; i < len(photoUrls); i++ {
+		<-resultQueue
+	}
+	fmt.Println("Download completed!")
 }
 
-// TODO: Complete download task
-func startDownloadWorkers(photoUrls []string, completeChannel chan int) {
-	for i, url := range photoUrls {
-		fmt.Println(i, url)
+func startDownloadWorkers(baseDir string, urlChannel chan string, resultQueue chan int) {
+	for url := range urlChannel {
+		fmt.Println(url)
+		resultQueue <- 1
 	}
-	completeChannel <- 1
 }
 
 // DownloadPictureHandler - Download picture handler
-func DownloadPictureHandler(targetIndex int, insta *goinsta.Instagram, simplifiedUsers *fetcherResponse.ByFollowersCount, numberOfWorkers int) {
-	photoUrls := collectPhotoURL(targetIndex, insta, simplifiedUsers)
-	downloadPictures(photoUrls, numberOfWorkers)
-	fmt.Println("Download completed!")
+func DownloadPictureHandler(insta *goinsta.Instagram, targetUser fetcherResponse.SimplifiedUser, numberOfWorkers int, baseDir string) {
+	photoUrls := collectPhotoURL(insta, targetUser)
+	fmt.Println(len(photoUrls))
+	downloadPictures(photoUrls, numberOfWorkers, baseDir)
 }
