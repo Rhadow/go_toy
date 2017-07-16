@@ -35,3 +35,13 @@ func MatchDownloadCommand(command string) bool {
 	}
 	return matched
 }
+
+// MatchOpenFolderCommand - Match search command
+func MatchOpenFolderCommand(command string) bool {
+	trimmedCommand := strings.Trim(command, " ")
+	matched, err := regexp.MatchString("^(o|open)$", trimmedCommand)
+	if err != nil {
+		panic(err)
+	}
+	return matched
+}

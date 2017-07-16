@@ -14,6 +14,7 @@ import (
 	"github.com/rhadow/go_toy/ig_fetcher/commandMatchers"
 	"github.com/rhadow/go_toy/ig_fetcher/fetcherResponse"
 	"github.com/rhadow/go_toy/ig_fetcher/instaHandlers"
+	"github.com/skratchdot/open-golang/open"
 )
 
 func promptUserCredentials() (string, string) {
@@ -55,17 +56,20 @@ func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcher
 	quit := false
 	for scanner.Scan() {
 		command := scanner.Text()
+		trimmedCommand := strings.Trim(command, " ")
+		commandAndArgs := strings.Split(trimmedCommand, " ")
 		switch {
-		case commandMatchers.MatchQuitCommand(command):
+		case commandMatchers.MatchQuitCommand(trimmedCommand):
 			quit = true
-		case commandMatchers.MatchSearchCommand(command):
-			trimmedCommand := strings.Trim(command, " ")
-			commandAndArgs := strings.Split(trimmedCommand, " ")
+		case commandMatchers.MatchOpenFolderCommand(trimmedCommand):
+			openErr := open.Run(baseDir)
+			if openErr != nil {
+				panic(openErr)
+			}
+		case commandMatchers.MatchSearchCommand(trimmedCommand):
 			query := strings.Join(commandAndArgs[1:], " ")
 			instaHandlers.SearchUserHandler(query, insta, simplifiedUsers)
-		case commandMatchers.MatchDownloadCommand(command):
-			trimmedCommand := strings.Trim(command, " ")
-			commandAndArgs := strings.Split(trimmedCommand, " ")
+		case commandMatchers.MatchDownloadCommand(trimmedCommand):
 			targetIndex, atoiErr := strconv.Atoi(commandAndArgs[1])
 			if atoiErr != nil {
 				panic(atoiErr)
