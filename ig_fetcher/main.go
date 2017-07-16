@@ -73,7 +73,7 @@ func startTerminalInteraction(insta *goinsta.Instagram, simplifiedUsers *fetcher
 			realIndex := targetIndex - 1
 			if len(*simplifiedUsers) <= realIndex || realIndex < 0 {
 				fmt.Printf("%d out of range\n", targetIndex)
-				return
+				break
 			}
 			targetUser := (*simplifiedUsers)[realIndex]
 			instaHandlers.DownloadPictureHandler(insta, targetUser, numberOfWorkers, baseDir)

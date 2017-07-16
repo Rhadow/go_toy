@@ -1,7 +1,15 @@
 package instaHandlers
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"net/http"
+	"os"
+	"strings"
 
 	"github.com/ahmdrz/goinsta"
 	"github.com/rhadow/go_toy/ig_fetcher/fetcherResponse"
@@ -60,26 +68,66 @@ func collectPhotoURL(insta *goinsta.Instagram, targetUser fetcherResponse.Simpli
 	return photoURLs
 }
 
-func downloadPictures(photoUrls []string, numberOfWorkers int, baseDir string) {
+func downloadPictures(photoUrls []string, numberOfWorkers int, dirPath string) {
 	fmt.Printf("100%% collected! Starting to download!\n")
 	queue := make(chan string, len(photoUrls))
 	resultQueue := make(chan int, len(photoUrls))
 	for i := 0; i < numberOfWorkers; i++ {
-		go startDownloadWorkers(baseDir, queue, resultQueue)
+		go startDownloadWorkers(dirPath, queue, resultQueue)
 	}
 	for _, url := range photoUrls {
 		queue <- url
 	}
 	close(queue)
 	for i := 0; i < len(photoUrls); i++ {
+		progress := (float64(i) / float64(len(photoUrls))) * 100
+		fmt.Printf("Downloaded %.1f%%\n", progress)
 		<-resultQueue
 	}
 	fmt.Println("Download completed!")
 }
 
-func startDownloadWorkers(baseDir string, urlChannel chan string, resultQueue chan int) {
+func getMD5Hash(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func startDownloadWorkers(dirPath string, urlChannel chan string, resultQueue chan int) {
 	for url := range urlChannel {
-		fmt.Println(url)
+		var imageType string
+		if strings.Contains(url, ".png") {
+			imageType = ".png"
+		} else {
+			imageType = ".jpg"
+		}
+		resp, httpErr := http.Get(url)
+		if httpErr != nil {
+			fmt.Println("HTTP Error: " + url)
+			continue
+		}
+		defer resp.Body.Close()
+		img, _, decodeErr := image.Decode(resp.Body)
+		if decodeErr != nil {
+			fmt.Println("Decode Error: " + url)
+			continue
+		}
+
+		bounds := img.Bounds()
+		if bounds.Size().X > 300 && bounds.Size().Y > 300 {
+			imgHash := getMD5Hash(url)
+			out, createFileErr := os.Create(dirPath + "/" + imgHash + imageType)
+			if createFileErr != nil {
+				fmt.Println("Create File Error: " + url)
+				continue
+			}
+			defer out.Close()
+			if imageType == ".png" {
+				png.Encode(out, img)
+			} else {
+				jpeg.Encode(out, img, nil)
+			}
+		}
 		resultQueue <- 1
 	}
 }
@@ -87,6 +135,7 @@ func startDownloadWorkers(baseDir string, urlChannel chan string, resultQueue ch
 // DownloadPictureHandler - Download picture handler
 func DownloadPictureHandler(insta *goinsta.Instagram, targetUser fetcherResponse.SimplifiedUser, numberOfWorkers int, baseDir string) {
 	photoUrls := collectPhotoURL(insta, targetUser)
-	fmt.Println(len(photoUrls))
-	downloadPictures(photoUrls, numberOfWorkers, baseDir)
+	dirPath := fmt.Sprintf("%v/%v", baseDir, targetUser.Username)
+	os.MkdirAll(dirPath, 0755)
+	downloadPictures(photoUrls, numberOfWorkers, dirPath)
 }
