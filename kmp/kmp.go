@@ -20,3 +20,10 @@ func buildPartialMatchTable(input string) []int {
 	}
 	return result
 }
+
+// KMP - A fast substring index finder with O(m + n)
+func KMP(text, target string) []int {
+	// TODO: complete KMP function
+	result := []int{}
+	return result
+}
