@@ -23,10 +23,9 @@ func buildPartialMatchTable(input string) []int {
 
 // KMP - A fast substring index finder with O(m + n)
 func KMP(text, target string) []int {
-	// TODO: complete KMP function
 	result := []int{}
 	textLength, targetLength := len(text), len(target)
-	if targetLength > textLength {
+	if targetLength > textLength || targetLength == 0 {
 		return result
 	}
 	textIndex, targetIndex, targetMatchIndex := 0, 0, 0
@@ -38,16 +37,18 @@ func KMP(text, target string) []int {
 			targetIndex++
 			targetMatchIndex++
 			if targetMatchIndex == targetLength {
+				shift := targetMatchIndex - partialMatchTable[targetMatchIndex-1]
 				result = append(result, textIndex-targetMatchIndex)
-				targetIndex = 0
-				targetMatchIndex = 0
+				targetIndex -= shift
+				targetMatchIndex -= shift
 			}
 		} else {
 			if targetMatchIndex == 0 {
 				textIndex++
 			} else {
-				targetIndex -= (targetMatchIndex - partialMatchTable[targetMatchIndex-1])
-				targetMatchIndex -= (targetMatchIndex - partialMatchTable[targetMatchIndex-1])
+				shift := targetMatchIndex - partialMatchTable[targetMatchIndex-1]
+				targetIndex -= shift
+				targetMatchIndex -= shift
 			}
 		}
 	}

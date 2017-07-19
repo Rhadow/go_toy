@@ -33,6 +33,9 @@ func TestKMP(t *testing.T) {
 		target string
 		output []int
 	}{
+		{"", "", []int{}},
+		{"", "a", []int{}},
+		{"a", "", []int{}},
 		{"a", "a", []int{0}},
 		{"ab", "a", []int{0}},
 		{"aba", "a", []int{0, 2}},
@@ -40,8 +43,12 @@ func TestKMP(t *testing.T) {
 		{"aabaabaaa", "cd", []int{}},
 		{"abcdaby", "ab", []int{0, 4}},
 		{"ABC ABCDAB ABCDABCDABDE", "ABCDABD", []int{15}},
+		{"ABC ABCDAB ABCDABCDABDEAN ABCDA BDY", "ABCDABD", []int{15}},
 		{"co", "cococp", []int{}},
 		{"cococp", "co", []int{0, 2}},
+		{"cococpco", "co", []int{0, 2, 6}},
+		{"ababababcdabab", "aba", []int{0, 2, 4, 10}},
+		{"cdocdicdocdoc", "cdoc", []int{0, 6, 9}},
 	}
 
 	for _, testCase := range testCases {
