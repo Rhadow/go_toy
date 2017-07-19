@@ -41,7 +41,7 @@ func TestKMP(t *testing.T) {
 		{"abcdaby", "ab", []int{0, 4}},
 		{"ABC ABCDAB ABCDABCDABDE", "ABCDABD", []int{15}},
 		{"co", "cococp", []int{}},
-		{"cococp", "co", []int{0, 1}},
+		{"cococp", "co", []int{0, 2}},
 	}
 
 	for _, testCase := range testCases {
